@@ -5,7 +5,7 @@ import StockForm from './components/StockForm';
 import StockList from './components/StockList';
 
 interface Stock {
-  id?: number; // Optional if not returned from the database
+  id?: number;
   name: string;
   volume: number;
   avgPrice: number;
@@ -15,13 +15,13 @@ interface Stock {
 }
 
 export default function Home() {
-  const [stocks, setStocks] = useState<Stock[]>([]); // Explicitly define the state type
+  const [stocks, setStocks] = useState<Stock[]>([]);
 
   const fetchStocks = async () => {
     try {
       const res = await fetch('/api/stocks');
       const data = await res.json();
-  
+
       if (Array.isArray(data)) {
         setStocks(data);
       } else {
@@ -32,11 +32,31 @@ export default function Home() {
       console.error('Error fetching stocks:', error);
       setStocks([]);
     }
-  };  
+  };
 
-  // Refresh stocks when an action is performed
   const refreshStocks = () => {
     fetchStocks();
+  };
+
+  const exportHistory = async () => {
+    try {
+      const res = await fetch('/api/history');
+      if (!res.ok) {
+        throw new Error('Failed to export history');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'history.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting history:', error);
+      alert('Failed to export history');
+    }
   };
 
   useEffect(() => {
@@ -57,10 +77,20 @@ export default function Home() {
         <hr className="my-6 border-gray-300" />
         {/* Stock List */}
         <StockList stocks={stocks} refreshStocks={refreshStocks} />
+        {/* Export Button */}
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={exportHistory}
+            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+          >
+            Export History to Excel
+          </button>
+        </div>
       </main>
+
       <footer className="w-full py-4 bg-gray-200 text-gray-600 text-center mt-8">
         <p className="text-sm">
-          © {new Date().getFullYear()} Investment Tracker. Built with 
+          © {new Date().getFullYear()} Investment Tracker. Built with{' '}
           <a
             href="https://nextjs.org/"
             target="_blank"

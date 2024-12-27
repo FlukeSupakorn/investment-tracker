@@ -4,13 +4,39 @@ import { useEffect, useState } from 'react';
 import StockForm from './components/StockForm';
 import StockList from './components/StockList';
 
+interface Stock {
+  id?: number; // Optional if not returned from the database
+  name: string;
+  volume: number;
+  avgPrice: number;
+  marketPrice: number;
+  uPl: number;
+  datetime: string;
+}
+
 export default function Home() {
-  const [stocks, setStocks] = useState<any[]>([]);
+  const [stocks, setStocks] = useState<Stock[]>([]); // Explicitly define the state type
 
   const fetchStocks = async () => {
-    const res = await fetch('/api/stocks');
-    const data = await res.json();
-    setStocks(data);
+    try {
+      const res = await fetch('/api/stocks');
+      const data = await res.json();
+  
+      if (Array.isArray(data)) {
+        setStocks(data);
+      } else {
+        console.error('Unexpected response format:', data);
+        setStocks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching stocks:', error);
+      setStocks([]);
+    }
+  };  
+
+  // Refresh stocks when an action is performed
+  const refreshStocks = () => {
+    fetchStocks();
   };
 
   useEffect(() => {
@@ -30,7 +56,7 @@ export default function Home() {
         {/* Divider */}
         <hr className="my-6 border-gray-300" />
         {/* Stock List */}
-        <StockList stocks={stocks} refreshStocks={fetchStocks} />
+        <StockList stocks={stocks} refreshStocks={refreshStocks} />
       </main>
       <footer className="w-full py-4 bg-gray-200 text-gray-600 text-center mt-8">
         <p className="text-sm">
